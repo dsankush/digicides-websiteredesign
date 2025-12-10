@@ -92,6 +92,13 @@ export default function DigiXBlogCreator() {
   const [customColor, setCustomColor] = useState('#000000');
   const [customHighlight, setCustomHighlight] = useState('#ffff00');
   
+  // Floating Toolbar for text selection
+  const [showFloatingToolbar, setShowFloatingToolbar] = useState(false);
+  const [floatingToolbarPos, setFloatingToolbarPos] = useState({ top: 0, left: 0 });
+  
+  // Drag and Drop state
+  const [isDragging, setIsDragging] = useState(false);
+  
   const editorRef = useRef<HTMLDivElement>(null);
   const toolbarRef = useRef<HTMLDivElement>(null);
   const savedSelectionRef = useRef<Range | null>(null);
@@ -107,6 +114,47 @@ export default function DigiXBlogCreator() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // FIX: Restore editor content when switching back from preview mode
+  useEffect(() => {
+    if (!isPreviewMode && editorRef.current && content) {
+      editorRef.current.innerHTML = content;
+    }
+  }, [isPreviewMode]);
+
+  // Handle text selection for floating toolbar
+  useEffect(() => {
+    const handleSelection = () => {
+      const selection = window.getSelection();
+      if (!selection || selection.isCollapsed || !editorRef.current) {
+        setShowFloatingToolbar(false);
+        return;
+      }
+      
+      const text = selection.toString().trim();
+      if (!text) {
+        setShowFloatingToolbar(false);
+        return;
+      }
+      
+      const range = selection.getRangeAt(0);
+      if (!editorRef.current.contains(range.commonAncestorContainer)) {
+        setShowFloatingToolbar(false);
+        return;
+      }
+      
+      const rect = range.getBoundingClientRect();
+      const editorRect = editorRef.current.getBoundingClientRect();
+      
+      setFloatingToolbarPos({
+        top: rect.top - editorRect.top - 50,
+        left: Math.min(Math.max(rect.left - editorRect.left + rect.width / 2 - 150, 10), editorRect.width - 310),
+      });
+      setShowFloatingToolbar(true);
+    };
+
+    document.addEventListener('selectionchange', handleSelection);
+    return () => document.removeEventListener('selectionchange', handleSelection);
+  }, []);
 
   // Auto-generate slug
   useEffect(() => {
@@ -519,10 +567,10 @@ export default function DigiXBlogCreator() {
                 <input type="text" placeholder="Subtitle (optional)" value={subtitle} onChange={(e) => setSubtitle(e.target.value)} className="w-full text-lg text-muted-foreground outline-none" />
               </div>
 
-              {/* Toolbar */}
-              <div ref={toolbarRef} className="bg-white rounded-2xl shadow-sm border p-4 relative">
+              {/* Toolbar - STICKY */}
+              <div ref={toolbarRef} className="bg-white rounded-2xl shadow-sm border p-4 relative sticky top-[85px] z-40">
                 <div className="flex flex-wrap items-center gap-1">
-                  <ToolbarBtn onClick={undo} icon={Undo} title="Undo" disabled={historyIndex <= 0} />
+                  <ToolbarBtn onClick={undo} icon={Undo} title="Undo (Ctrl+Z)" disabled={historyIndex <= 0} />
                   <ToolbarBtn onClick={redo} icon={Redo} title="Redo" disabled={historyIndex >= history.length - 1} />
                   <div className="w-px h-6 bg-gray-200 mx-1" />
                   
@@ -652,11 +700,71 @@ export default function DigiXBlogCreator() {
                 </div>
               </div>
 
-              {/* Editor */}
-              <div className="bg-white rounded-2xl shadow-sm border p-6">
+              {/* Editor with Floating Toolbar and Drag-Drop */}
+              <div 
+                className={`bg-white rounded-2xl shadow-sm border p-6 relative transition-all ${isDragging ? 'ring-2 ring-primary ring-offset-2 bg-primary/5' : ''}`}
+                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setIsDragging(false);
+                  const files = Array.from(e.dataTransfer.files);
+                  files.forEach(file => {
+                    if (file.type.startsWith('image/')) {
+                      const reader = new FileReader();
+                      reader.onload = (ev) => {
+                        if (typeof ev.target?.result === 'string') {
+                          const html = `<figure style="margin: 24px 0; text-align: center;"><img src="${ev.target.result}" alt="${file.name}" style="max-width:100%; border-radius:12px;" /><figcaption style="font-size:14px; color:#666; margin-top:8px;">${file.name}</figcaption></figure>`;
+                          insertHTMLAtCursor(html);
+                        }
+                      };
+                      reader.readAsDataURL(file);
+                    } else if (file.type.startsWith('video/')) {
+                      const reader = new FileReader();
+                      reader.onload = (ev) => {
+                        if (typeof ev.target?.result === 'string') {
+                          const html = `<div style="margin: 24px 0;"><video controls style="max-width: 100%; border-radius: 12px;"><source src="${ev.target.result}" type="${file.type}"></video></div>`;
+                          insertHTMLAtCursor(html);
+                        }
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  });
+                }}
+              >
+                {/* Drag overlay */}
+                {isDragging && (
+                  <div className="absolute inset-0 bg-primary/10 rounded-2xl flex items-center justify-center z-10 pointer-events-none">
+                    <div className="text-center">
+                      <FileImage size={48} className="mx-auto text-primary mb-2" />
+                      <p className="text-primary font-medium">Drop images or videos here</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Floating Toolbar - appears on text selection */}
+                {showFloatingToolbar && (
+                  <div 
+                    className="absolute z-50 bg-gray-900 text-white rounded-xl shadow-2xl px-2 py-1.5 flex items-center gap-1"
+                    style={{ top: floatingToolbarPos.top, left: floatingToolbarPos.left }}
+                  >
+                    <button onClick={() => formatText('bold')} className="p-2 rounded hover:bg-white/20" title="Bold"><Bold size={16} /></button>
+                    <button onClick={() => formatText('italic')} className="p-2 rounded hover:bg-white/20" title="Italic"><Italic size={16} /></button>
+                    <button onClick={() => formatText('underline')} className="p-2 rounded hover:bg-white/20" title="Underline"><Underline size={16} /></button>
+                    <button onClick={() => formatText('strikethrough')} className="p-2 rounded hover:bg-white/20" title="Strikethrough"><Strikethrough size={16} /></button>
+                    <div className="w-px h-5 bg-gray-600 mx-1" />
+                    <button onClick={() => formatText('h2')} className="p-2 rounded hover:bg-white/20" title="Heading"><Heading2 size={16} /></button>
+                    <button onClick={() => formatText('quote')} className="p-2 rounded hover:bg-white/20" title="Quote"><Quote size={16} /></button>
+                    <button onClick={() => formatText('link')} className="p-2 rounded hover:bg-white/20" title="Link"><LinkIcon size={16} /></button>
+                    <div className="w-px h-5 bg-gray-600 mx-1" />
+                    <button onClick={() => formatText('hiliteColor', '#ffff00')} className="p-2 rounded hover:bg-white/20" title="Highlight"><Highlighter size={16} /></button>
+                  </div>
+                )}
+
                 <div ref={editorRef} contentEditable onInput={(e) => { const u = e.currentTarget.innerHTML; setContent(u); updateHistory(u); }}
-                  className="min-h-[500px] outline-none prose prose-lg max-w-none [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:mb-4 [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:mb-3 [&_h3]:text-xl [&_h3]:font-semibold [&_h3]:mb-2 [&_p]:mb-4 [&_ul]:list-disc [&_ul]:ml-6 [&_ol]:list-decimal [&_ol]:ml-6 [&_li]:mb-2 [&_blockquote]:border-l-4 [&_blockquote]:border-primary [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:bg-[#FEF4E8] [&_blockquote]:py-3 [&_blockquote]:rounded-r-lg [&_pre]:bg-gray-900 [&_pre]:text-gray-100 [&_pre]:p-4 [&_pre]:rounded-lg [&_a]:text-primary [&_a]:underline [&_img]:rounded-lg [&_img]:my-4 [&_video]:rounded-lg [&_video]:my-4"
+                  className="min-h-[500px] outline-none prose prose-lg max-w-none [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:mb-4 [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:mb-3 [&_h3]:text-xl [&_h3]:font-semibold [&_h3]:mb-2 [&_p]:mb-4 [&_ul]:list-disc [&_ul]:ml-6 [&_ol]:list-decimal [&_ol]:ml-6 [&_li]:mb-2 [&_blockquote]:border-l-4 [&_blockquote]:border-primary [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:bg-[#FEF4E8] [&_blockquote]:py-3 [&_blockquote]:rounded-r-lg [&_pre]:bg-gray-900 [&_pre]:text-gray-100 [&_pre]:p-4 [&_pre]:rounded-lg [&_a]:text-primary [&_a]:underline [&_img]:rounded-lg [&_img]:my-4 [&_img]:max-w-full [&_video]:rounded-lg [&_video]:my-4 [&_video]:max-w-full"
                   suppressContentEditableWarning
+                  data-placeholder="Start writing your blog post... You can drag and drop images and videos here!"
                 />
               </div>
 
