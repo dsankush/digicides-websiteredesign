@@ -250,26 +250,192 @@ export default function BlogPostPage({ params }: PageProps) {
       {/* Content */}
       <div className="container mx-auto max-w-4xl px-4 pb-12">
         <div
-          className="prose prose-lg max-w-none
-            prose-headings:text-foreground prose-headings:font-bold
-            prose-h1:text-3xl prose-h1:mt-10 prose-h1:mb-4
-            prose-h2:text-2xl prose-h2:mt-8 prose-h2:mb-4
-            prose-h3:text-xl prose-h3:mt-6 prose-h3:mb-3
-            prose-p:text-foreground prose-p:leading-relaxed prose-p:mb-4
-            prose-a:text-primary prose-a:no-underline hover:prose-a:underline
-            prose-strong:text-foreground prose-strong:font-semibold
-            prose-ul:my-4 prose-ul:list-disc prose-ul:pl-6
-            prose-ol:my-4 prose-ol:list-decimal prose-ol:pl-6
-            prose-li:text-foreground prose-li:mb-2
-            prose-blockquote:border-l-4 prose-blockquote:border-primary prose-blockquote:pl-6 prose-blockquote:italic prose-blockquote:text-muted-foreground prose-blockquote:my-6
-            prose-img:rounded-xl prose-img:shadow-md prose-img:my-8
-            prose-code:bg-gray-100 prose-code:px-2 prose-code:py-1 prose-code:rounded prose-code:text-sm
-            prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-pre:rounded-xl prose-pre:p-6 prose-pre:overflow-x-auto
-            [&_video]:rounded-xl [&_video]:my-8 [&_video]:max-w-full
-            [&_iframe]:rounded-xl [&_iframe]:my-8
-          "
+          className="blog-content"
           dangerouslySetInnerHTML={{ __html: blog.content }}
         />
+        <style jsx global>{`
+          .blog-content {
+            font-size: 1.125rem;
+            line-height: 1.8;
+            color: #1a1a1a;
+          }
+          .blog-content h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 2.5rem 0 1rem;
+            color: #1a1a1a;
+          }
+          .blog-content h2 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin: 2rem 0 1rem;
+            color: #1a1a1a;
+          }
+          .blog-content h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 1.5rem 0 0.75rem;
+            color: #1a1a1a;
+          }
+          .blog-content p {
+            margin-bottom: 1.25rem;
+            line-height: 1.8;
+          }
+          .blog-content a {
+            color: #E07B39;
+            text-decoration: none;
+          }
+          .blog-content a:hover {
+            text-decoration: underline;
+          }
+          .blog-content strong {
+            font-weight: 600;
+          }
+          .blog-content ul {
+            list-style: disc;
+            padding-left: 1.5rem;
+            margin: 1rem 0;
+          }
+          .blog-content ol {
+            list-style: decimal;
+            padding-left: 1.5rem;
+            margin: 1rem 0;
+          }
+          .blog-content li {
+            margin-bottom: 0.5rem;
+          }
+          .blog-content blockquote {
+            border-left: 4px solid #E07B39;
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            background: #FEF4E8;
+            border-radius: 0 12px 12px 0;
+            font-style: italic;
+          }
+          .blog-content code {
+            background: #f3f4f6;
+            padding: 0.125rem 0.375rem;
+            border-radius: 4px;
+            font-size: 0.875em;
+            font-family: monospace;
+          }
+          .blog-content pre {
+            background: #1f2937;
+            color: #f3f4f6;
+            padding: 1.5rem;
+            border-radius: 12px;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+          }
+          .blog-content pre code {
+            background: transparent;
+            padding: 0;
+            color: inherit;
+          }
+          /* IMAGE FIXES - Full width, no cutoff */
+          .blog-content img {
+            max-width: 100%;
+            width: auto;
+            height: auto;
+            display: block;
+            margin: 1.5rem auto;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+          }
+          .blog-content figure {
+            margin: 1.5rem 0;
+            text-align: center;
+          }
+          .blog-content figure img {
+            margin: 0 auto 0.5rem;
+          }
+          .blog-content figcaption {
+            font-size: 0.875rem;
+            color: #666;
+          }
+          /* VIDEO FIXES - Full width, responsive */
+          .blog-content video {
+            max-width: 100%;
+            width: 100%;
+            height: auto;
+            display: block;
+            margin: 1.5rem 0;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+          }
+          /* IFRAME/EMBED FIXES - YouTube, Vimeo etc */
+          .blog-content iframe {
+            max-width: 100%;
+            width: 100%;
+            border-radius: 12px;
+            margin: 1.5rem 0;
+          }
+          .blog-content div[style*="padding-bottom: 56.25%"],
+          .blog-content div[style*="padding-bottom:56.25%"],
+          .blog-content .video-container {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            overflow: hidden;
+            max-width: 100%;
+            margin: 1.5rem 0;
+            border-radius: 12px;
+            background: #000;
+          }
+          .blog-content div[style*="padding-bottom: 56.25%"] iframe,
+          .blog-content div[style*="padding-bottom:56.25%"] iframe,
+          .blog-content .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 12px;
+            margin: 0;
+          }
+          /* TABLE STYLING */
+          .blog-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            overflow: hidden;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+          }
+          .blog-content th, .blog-content td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+          }
+          .blog-content th {
+            background: #f9fafb;
+            font-weight: 600;
+          }
+          .blog-content tr:last-child td {
+            border-bottom: none;
+          }
+          /* HR STYLING */
+          .blog-content hr {
+            border: none;
+            border-top: 2px solid #e5e7eb;
+            margin: 2rem 0;
+          }
+          /* RESPONSIVE */
+          @media (max-width: 768px) {
+            .blog-content {
+              font-size: 1rem;
+            }
+            .blog-content h1 {
+              font-size: 1.75rem;
+            }
+            .blog-content h2 {
+              font-size: 1.5rem;
+            }
+            .blog-content h3 {
+              font-size: 1.25rem;
+            }
+          }
+        `}</style>
       </div>
 
       {/* Tags */}

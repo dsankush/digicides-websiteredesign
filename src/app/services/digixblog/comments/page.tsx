@@ -8,7 +8,7 @@ import type { BlogComment } from '@/types/blog';
 import {
   ChevronLeft, Loader2, AlertCircle, Check, Filter,
   RefreshCw, LogOut, MessageSquare, Trash2, CheckCircle, XCircle,
-  Clock, User, Calendar, ExternalLink
+  Clock, User, Calendar, ExternalLink, Bell, BellRing
 } from 'lucide-react';
 
 interface CommentWithBlog extends BlogComment {
@@ -190,10 +190,29 @@ export default function CommentsManagement() {
               <Link href="/services/digixblog/manage" className="text-muted-foreground hover:text-foreground transition-colors">
                 <ChevronLeft size={24} />
               </Link>
+              {/* Notification Bell */}
+              <div className="relative">
+                {pendingCount > 0 ? (
+                  <div className="p-2 bg-orange-100 rounded-full animate-pulse">
+                    <BellRing size={24} className="text-orange-500" />
+                    <span className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center animate-bounce">
+                      {pendingCount > 99 ? '99+' : pendingCount}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="p-2 bg-green-100 rounded-full">
+                    <Bell size={24} className="text-green-500" />
+                  </div>
+                )}
+              </div>
               <div>
                 <h1 className="text-2xl font-bold text-foreground">Comments</h1>
                 <p className="text-sm text-muted-foreground">
-                  {pendingCount > 0 ? `${pendingCount} pending approval` : 'All caught up!'}
+                  {pendingCount > 0 ? (
+                    <span className="text-orange-600 font-medium">{pendingCount} pending approval</span>
+                  ) : (
+                    <span className="text-green-600">All caught up!</span>
+                  )}
                 </p>
               </div>
             </div>
